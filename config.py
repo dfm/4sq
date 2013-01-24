@@ -16,6 +16,10 @@ class Config(object):
     SECRET_KEY = unicode(os.environ.get("SECRET", "development secret key")) \
                          .encode("utf-8")
 
+    # Database connection.
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL",
+                                        "postgresql://localhost/foursquare")
+
     # Foursquare.
     FOURSQUARE_ID = unicode(os.environ["FOURSQUARE_ID"])
     FOURSQUARE_SECRET = unicode(os.environ["FOURSQUARE_SECRET"])

@@ -2,3 +2,4 @@ venv
 .DS_Store
 *.pyc
 values.sh
+static/huge.png
