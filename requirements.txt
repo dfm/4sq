@@ -2,3 +2,4 @@ Flask==0.9
 foursquare==20120716
 psycopg2==2.4.6
 Flask-SQLAlchemy==0.16
+gunicorn==0.17.2
