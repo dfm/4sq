@@ -189,6 +189,8 @@ def authorize():
 
 class User(db.Model):
 
+    __tablename__ = "users"
+
     id = db.Column(db.Integer, primary_key=True)
     foursquare_id = db.Column(db.Text)
     token = db.Column(db.Text)
