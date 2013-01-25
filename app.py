@@ -23,8 +23,7 @@ db = SQLAlchemy(app)
 api_connection = foursquare.Foursquare(
                         client_id=app.config["FOURSQUARE_ID"],
                         client_secret=app.config["FOURSQUARE_SECRET"],
-                        redirect_uri="http://localhost:5000/oauth/authorize")
-                        # redirect_uri="http://4sq.dfm.io/oauth/authorize")
+                        redirect_uri="http://4sq.dfm.io/oauth/authorize")
 
 
 def get_current_user():
