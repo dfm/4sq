@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div id="content">
+    <div>Try it out:</div>
+    <form action="javascript:submit();">
+        <input type="text" name="q" id="q">
+    </form>
+    <div id="result"></div>
+</div>
+
+<script src="{{ url_for(".static", filename="zepto.min.js") }}"></script>
+<script>
+
+function submit() {
+    $.ajax({
+        url: "{{ url_for(".api") }}",
+        data: {q: $("#q").val()},
+        dataType: "json",
+        success: function (data) {
+            $("#result").html(data.rendered);
+        }
+    });
+}
+
+</script>
+
+{% endblock %}
