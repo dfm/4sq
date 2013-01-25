@@ -15,6 +15,7 @@ import foursquare
 
 app = flask.Flask(__name__)
 app.config.from_object("config.Config")
+app.debug = True
 
 # The database connection.
 db = SQLAlchemy(app)
