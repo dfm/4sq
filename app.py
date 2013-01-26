@@ -24,7 +24,7 @@ db = SQLAlchemy(app)
 api_connection = foursquare.Foursquare(
                         client_id=app.config["FOURSQUARE_ID"],
                         client_secret=app.config["FOURSQUARE_SECRET"],
-                        redirect_uri="http://4sq.dfm.io/oauth/authorize")
+                        redirect_uri=app.config["FOURSQUARE_URL"])
 
 
 def get_current_user():
@@ -45,7 +45,7 @@ def index():
         except foursquare.InvalidAuth:
             user = None
         else:
-            return flask.render_template("text.html", user=user)
+            return flask.render_template("main.html", user=user)
 
     return flask.render_template("index.html", user=user)
 
@@ -131,7 +131,6 @@ def api():
     rendered = "Check-in at: "
     rendered += "<a href=\"{0[canonicalUrl]}\" target=\"_blank\">{0[name]}</a>"
 
-    print(v["id"], result["shout"])
     p = {"venueId": v["id"], "broadcast": "private"}
     if result["shout"] is not None:
         p["shout"] = result["shout"]
@@ -172,6 +171,7 @@ def authorize():
     u0 = User.query.filter_by(foursquare_id=user["id"]).first()
     if u0 is None:
         u0 = User(user["id"], token, home_city)
+        u0.phone = user.get("contact", {}).get("phone", None)
 
     # Update the token and home city.
     u0.token = token

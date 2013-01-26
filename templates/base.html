@@ -3,10 +3,10 @@
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
 
-    <title>Foursquare SMS</title>
+    <title>{% block title %}{% endblock %}</title>
 
     <link rel="stylesheet" href="{{ url_for(".static", filename="normalize.css") }}" type="text/css" media="screen">
-    <link rel="stylesheet" href="{{ url_for(".static", filename="screen.css") }}" type="text/css" media="screen">
+    {% block head %}{% endblock %}
 
 </head>
 <body>

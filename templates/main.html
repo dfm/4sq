@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Foursquare via SMS{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for(".static", filename="screen.css") }}" type="text/css" media="screen">
+{% endblock %}
+
+{% block content %}
+
+<div id="content">
+    <div class="section-header">Get Started</div>
+
+    <div class="section-body">
+        <div class="section-info">
+            <h3>Phone number</h3>
+            <p>Enter your phone number and we'll send you an SMS with a
+            code. Enter that code to confirm your number and then you can
+            start checking in.</p>
+        </div>
+        <div class="section-ctrl">
+            <div class="input-block">
+                <span class="input-left">+1</span>
+                <span class="input-middle">
+                    <input type="text" size="12">
+                </span>
+            </div>
+            <div class="ctrl-text">Not confirmed.</div>
+        </div>
+    </div>
+
+    <div class="section-body">
+        <div class="section-info">
+            <h3>Basic check-in syntax</h3>
+            <p>Enter your phone number and we'll send you an SMS with a
+            code. Enter that code to confirm your number and then you can
+            start checking in.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

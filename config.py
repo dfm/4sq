@@ -23,3 +23,4 @@ class Config(object):
     # Foursquare.
     FOURSQUARE_ID = unicode(os.environ["FOURSQUARE_ID"])
     FOURSQUARE_SECRET = unicode(os.environ["FOURSQUARE_SECRET"])
+    FOURSQUARE_URL = unicode(os.environ["FOURSQUARE_URL"])
