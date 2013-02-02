@@ -35,6 +35,13 @@ def get_current_user():
     return None
 
 
+@app.route("/4sq.js")
+def js():
+    r = flask.make_response(flask.render_template("4sq.js"))
+    r.headers["Content-Type"] = "application/javascript; charset=utf-8"
+    return r
+
+
 @app.route("/")
 def index():
     user = get_current_user()
@@ -71,6 +78,12 @@ def parse_query(q):
     # Split the results of the parse.
     venue, shout = match.groups()
     return True, {"venue": venue, "shout": shout, "private": private}
+
+
+@app.route("/api/check")
+def check_number():
+    print(flask.request.values)
+    return json.dumps({"number": "917-327-3473"})
 
 
 @app.route("/api")

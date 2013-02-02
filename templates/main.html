@@ -19,13 +19,15 @@
             start checking in.</p>
         </div>
         <div class="section-ctrl">
-            <div class="input-block">
-                <span class="input-left">+1</span>
-                <span class="input-middle">
-                    <input type="text" size="12">
-                </span>
-            </div>
-            <div class="ctrl-text">Not confirmed.</div>
+            <form action="javascript:foursquare.confirm_number();">
+                <div class="input-block">
+                    <span class="input-left">+1</span>
+                    <span class="input-middle">
+                        <input type="text" id="phone-input" size="12">
+                    </span>
+                </div>
+            </form>
+            <div class="ctrl-text" id="phone-result">Not confirmed.</div>
         </div>
     </div>
 
@@ -39,4 +41,9 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for(".static", filename="zepto.min.js") }}"></script>
+<script src="/4sq.js"></script>
 {% endblock %}
