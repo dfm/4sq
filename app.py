@@ -82,6 +82,12 @@ def parse_query(q):
     # Split the results of the parse.
     venue, shout = match.groups()
 
+    # Find any location hint.
+    near = None
+    venue, hint = re.findall(r"\A(.*?)(?:(?:\((.*)\))|\Z)", venue)[0]
+    if len(hint) > 0:
+        near = hint
+
     # Find the mentions in the shout.
     mention = re.compile(r"(?:\A|\s):(\w+?):(?:\s|\Z|\W)")
     mentions = []
@@ -93,8 +99,8 @@ def parse_query(q):
         for m in mentions:
             shout = shout[:m[1]] + m[0] + shout[m[2] + 1:]
 
-    return True, {"venue": venue, "shout": shout, "private": private,
-                  "mentions": mentions}
+    return True, {"venue": venue, "near": near, "shout": shout,
+                  "private": private, "mentions": mentions}
 
 
 def send_confirmation(number):
@@ -200,20 +206,32 @@ def get_sms():
         return unicode(resp)
 
     # Build and execute the API call.
+    ll = "{0},{1}".format(lat, lng)
     params = {
-                "ll": "{0},{1}".format(lat, lng),
+                "ll": ll,
                 "intent": "checkin",
                 "query": result["venue"],
                 "limit": 1,
              }
-    r = api_connection.venues.search(params=params)
+
+    # Was a location hint provided?
+    if result["near"] is not None:
+        ll = params.pop("ll")
+        params["near"] = result["near"]
+
+    try:
+        r = api_connection.venues.search(params=params)
+    except foursquare.FailedGeocode:
+        params.pop("near")
+        params["ll"] = ll
+        r = api_connection.venues.search(params=params)
 
     # Search for the specified venue.
     if len(r.get("venues", [])) == 0:
         resp.sms("No matches for '{0}'.".format(result["venue"]))
         return unicode(resp)
 
-    # Do the checkin.
+    # Set up the request.
     v = r["venues"][0]
     p = {"venueId": v["id"],
          "broadcast": "private" if result["private"] else "public"}
