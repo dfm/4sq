@@ -14,6 +14,7 @@ import flask
 from flask.ext.sqlalchemy import SQLAlchemy
 
 import foursquare
+import twilio.twiml
 from twilio.rest import TwilioRestClient
 
 app = flask.Flask(__name__)
@@ -65,10 +66,10 @@ def parse_query(q):
     q = " ".join(q.splitlines())
 
     # Determine the privacy settings for this check-in.
-    privacy_re = re.compile(r"(?:\s*)(/private)(?:\s*)",
+    privacy_re = re.compile(r"(?:\s*)(/p)(?:\s*)",
                             re.I | re.S | re.M)
     private = len(privacy_re.findall(q)) > 0
-    q = " ".join([w for w in privacy_re.split(q) if w.lower() != "/private"])
+    q = " ".join([w for w in privacy_re.split(q) if w.lower() != "/p"])
 
     # Parse the query here.
     prog = re.compile(r"^(.*?)(?:$|(?:\:(?:\s+)(.*)))", re.I | re.S)
@@ -120,6 +121,96 @@ def check_number():
     return json.dumps({"number": "{0}-{1}-{2}".format(number[:3],
                                                       number[3:6],
                                                       number[6:])})
+
+
+@app.route("/api/confirm/<code>")
+def confirm_code(code):
+    user = get_current_user()
+    print(user.code.strip(), code.strip())
+    if user.code.strip() == code.strip():
+        user.confirmed = True
+        db.session.add(user)
+        db.session.commit()
+        return json.dumps({"success": True})
+
+    return "Wrong code.", 400
+
+
+@app.route("/api/sms", methods=["GET", "POST"])
+def get_sms():
+    resp = twilio.twiml.Response()
+
+    # Parse the input.
+    vals = flask.request.values
+    number = vals.get("From", None)
+    body = vals.get("Body", None)
+    if number is None or body is None:
+        print("No number.")
+        return unicode(resp)
+
+    # Find the associated user.
+    user = User.query.filter_by(phone=number[2:]).first()
+    if user is None or not user.confirmed:
+        resp.sms("We don't recognize your number.")
+        return unicode(resp)
+
+    # Authenticate.
+    api_connection.set_access_token(user.token)
+
+    # Parse the query and build the API query.
+    success, result = parse_query(body)
+    if not success:
+        resp.sms("Something went wrong with the Foursquare API.")
+        return unicode(resp)
+
+    # Find the most recent check-in to use for geolocation.
+    recent = api_connection.users.checkins(params={"limit": 1}) \
+                                .get("checkins", {"items": []})["items"]
+
+    # If we found a recent check-in, find the latitude and longitude.
+    lat, lng = None, None
+    if len(recent) > 0:
+        recent = recent[0]
+        if "location" in recent:
+            loc = recent["location"]
+            lat, lng = loc.get("lat", None), loc.get("lng", None)
+
+        if (lat is None or lng is None) \
+                    and "location" in recent.get("venue", {}):
+            loc = recent["venue"]["location"]
+            lat, lng = loc.get("lat", None), loc.get("lng", None)
+
+    # Make sure that we found a location.
+    if lat is None or lng is None:
+        resp.sms("We couldn't place your current location. Try providing a "
+                 "hint.")
+        return unicode(resp)
+
+    # Build and execute the API call.
+    params = {
+                "ll": "{0},{1}".format(lat, lng),
+                "intent": "checkin",
+                "query": result["venue"],
+                "limit": 1,
+             }
+    r = api_connection.venues.search(params=params)
+
+    # Search for the specified venue.
+    if len(r.get("venues", [])) == 0:
+        resp.sms("No matches for '{0}'.".format(result["venue"]))
+        return unicode(resp)
+
+    # Do the checkin.
+    v = r["venues"][0]
+    p = {"venueId": v["id"],
+         "broadcast": "private" if result["private"] else "public"}
+    if result["shout"] is not None:
+        p["shout"] = result["shout"]
+    api_connection.checkins.add(p)
+
+    # Send the response.
+    resp.sms("You're at {0}".format(v["name"]))
+    return unicode(resp)
 
 
 @app.route("/api")
@@ -245,7 +336,7 @@ class User(db.Model):
     token = db.Column(db.Text)
     phone = db.Column(db.Text)
     confirmed = db.Column(db.Boolean)
-    code = db.Column(db.Integer)
+    code = db.Column(db.Text)
     homeCity = db.Column(db.Text)
 
     def __init__(self, foursquare_id, token, homeCity):

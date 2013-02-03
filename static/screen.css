@@ -12,6 +12,11 @@ body {
 a {
     font-weight: 600;
     text-decoration: none;
+    color: steelblue;
+}
+
+a:hover {
+    color: rgb(60, 160, 243);
 }
 
 #footer {
@@ -151,11 +156,39 @@ a {
 
 .modal-inner {
     width: 600px;
-    min-height: 300px;
-    margin: 10% auto;
+    margin: 100px auto;
     background-color: #e3e3e1;
+    border: 1px solid #222;
+}
+
+.modal-header {
+    font-size: 24px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 600;
+
+    text-align: center;
+    padding: 35px 0 40px;
+}
+
+.modal-footer {
+    font-size: 18px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: normal;
+
+    text-align: center;
+    padding: 30px 0 40px;
 }
 
 #enter-code-input {
-    width: 200px;
+    width: 300px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#enter-code-input input {
+    font-size: 36px;
+    padding: 10px 10px;
+    text-align: center;
 }

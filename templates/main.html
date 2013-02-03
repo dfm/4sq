@@ -35,15 +35,22 @@
         </div>
     </div>
 
-    <div id="enter-code-modal" style="display: none;">
+    <div id="enter-code-modal"{% if not user.code or user.confirmed %} style="display: none;"{% endif %}>
         <div class="modal-bkg"></div>
         <div class="modal">
             <div class="modal-inner">
-                <form action="javascript:foursquare.confirm_number();">
+                <div class="modal-header">
+                    Enter the code that we texted to your phone.
+                </div>
+                <form action="javascript:foursquare.confirm_code();">
                     <div id="enter-code-input">
-                        <input type="text" id="phone-input" size="12">
+                        <input type="text" id="code-input" size="5">
                     </div>
+                    <div class="ctrl-text" id="code-result">&nbsp;</div>
                 </form>
+                <div class="modal-footer">
+                    <a href="javascript:foursquare.confirm_number();">Send the confirmation code again.</a>
+                </div>
             </div>
         </div>
     </div>
