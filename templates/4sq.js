@@ -34,6 +34,7 @@
 
   fsq.code_response = function (data) {
     $("#enter-code-modal").hide();
+    $("#phone-result").text("Confirmed.");
   };
 
   fsq.code_error = function (xhr, errorType, data) {

@@ -77,11 +77,24 @@ def parse_query(q):
 
     # Fail if we couldn't match.
     if match is None:
-        return False, {"rendered": "Couldn't parse request."}
+        return False, {}
 
     # Split the results of the parse.
     venue, shout = match.groups()
-    return True, {"venue": venue, "shout": shout, "private": private}
+
+    # Find the mentions in the shout.
+    mention = re.compile(r"(?:\A|\s):(\w+?):(?:\s|\Z|\W)")
+    mentions = []
+    if shout is not None:
+        for i, m in enumerate(mention.finditer(shout)):
+            s, e = m.span(1)
+            mentions.append((m.groups()[0], s - 1 - 2 * i, e - 2 * i))
+
+        for m in mentions:
+            shout = shout[:m[1]] + m[0] + shout[m[2] + 1:]
+
+    return True, {"venue": venue, "shout": shout, "private": private,
+                  "mentions": mentions}
 
 
 def send_confirmation(number):
@@ -206,77 +219,31 @@ def get_sms():
          "broadcast": "private" if result["private"] else "public"}
     if result["shout"] is not None:
         p["shout"] = result["shout"]
+
+    # Search for mentions.
+    if len(result["mentions"]) > 0:
+        # Get list of friends. NOTE: everything breaks if you have more than
+        # 500 friends... LOSER.
+        friends = api_connection.users.friends(params={"limit": 500})
+        friends = friends.get("friends", {"count": 0, "items": []})
+        count, friends = friends["count"], friends["items"]
+
+        mentions = []
+        for m in result["mentions"]:
+            for f in friends:
+                n = f["firstName"] + " " + f["lastName"]
+                if m[0].lower() in n.lower():
+                    mentions.append("{0},{1},{2}".format(m[1], m[2] - 1,
+                                    f["id"]))
+                    break
+        p["mentions"] = ";".join(mentions)
+
+    # Submit the check-in.
     api_connection.checkins.add(p)
 
     # Send the response.
     resp.sms("You're at {0}".format(v["name"]))
     return unicode(resp)
-
-
-@app.route("/api")
-def api():
-    user = get_current_user()
-    if user is None:
-        flask.abort(403)
-
-    # Authenticate.
-    api_connection.set_access_token(user.token)
-
-    # Retrieve the request query.
-    q = flask.request.args.get("q", None)
-    if q is None:
-        flask.abort(404)
-
-    # Parse the query and build the API query.
-    success, result = parse_query(q)
-    if not success:
-        return json.dumps(result)
-
-    # Find the most recent check-in to use for geolocation.
-    recent = api_connection.users.checkins(params={"limit": 1}) \
-                                .get("checkins", {"items": []})["items"]
-
-    # If we found a recent check-in, find the latitude and longitude.
-    lat, lng = None, None
-    if len(recent) > 0:
-        recent = recent[0]
-        if "location" in recent:
-            loc = recent["location"]
-            lat, lng = loc.get("lat", None), loc.get("lng", None)
-
-        if (lat is None or lng is None) \
-                    and "location" in recent.get("venue", {}):
-            loc = recent["venue"]["location"]
-            lat, lng = loc.get("lat", None), loc.get("lng", None)
-
-    # Make sure that we found a location.
-    if lat is None or lng is None:
-        return json.dumps({"rendered": "You don't have a location."})
-
-    # Build and execute the API call.
-    params = {
-                "ll": "{0},{1}".format(lat, lng),
-                "intent": "checkin",
-                "query": result["venue"],
-                "limit": 1,
-             }
-    r = api_connection.venues.search(params=params)
-
-    # Search for the specified venue.
-    if len(r.get("venues", [])) == 0:
-        return json.dumps({"rendered":
-                        "No matches for venue: '{0}'".format(result["venue"])})
-
-    v = r["venues"][0]
-    rendered = "Check-in at: "
-    rendered += "<a href=\"{0[canonicalUrl]}\" target=\"_blank\">{0[name]}</a>"
-
-    p = {"venueId": v["id"], "broadcast": "private"}
-    if result["shout"] is not None:
-        p["shout"] = result["shout"]
-    api_connection.checkins.add(p)
-
-    return json.dumps({"rendered": rendered.format(v)})
 
 
 @app.route("/login")
