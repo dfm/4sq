@@ -24,3 +24,8 @@ class Config(object):
     FOURSQUARE_ID = unicode(os.environ["FOURSQUARE_ID"])
     FOURSQUARE_SECRET = unicode(os.environ["FOURSQUARE_SECRET"])
     FOURSQUARE_URL = unicode(os.environ["FOURSQUARE_URL"])
+
+    # Twilio.
+    TWILIO_ID = unicode(os.environ["TWILIO_ID"])
+    TWILIO_SECRET = unicode(os.environ["TWILIO_SECRET"])
+    TWILIO_NUMBER = unicode(os.environ["TWILIO_NUMBER"])

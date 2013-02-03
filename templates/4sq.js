@@ -8,6 +8,7 @@
     var el = $("#phone-input");
     el.attr("disabled", "disabled");
     $("#phone-result").text("Confirming number.");
+    $("#modal-input").show();
 
     // Submit the API request.
     var url = "{{ url_for('check_number') }}",

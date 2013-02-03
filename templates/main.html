@@ -23,11 +23,28 @@
                 <div class="input-block">
                     <span class="input-left">+1</span>
                     <span class="input-middle">
-                        <input type="text" id="phone-input" size="12">
+                        <input type="text" id="phone-input" size="12" {% if user.phone %}value="{{ user.phone[:3] }}-{{ user.phone[3:6] }}-{{ user.phone[6:] }}"{% endif %}>
                     </span>
                 </div>
             </form>
-            <div class="ctrl-text" id="phone-result">Not confirmed.</div>
+            <div class="ctrl-text" id="phone-result">
+                {% if not user.confirmed %}Not confirmed.
+                {% if user.code %}<a href="javascript:foursquare.confirm_number();">Re-send code.</a>{% endif %}
+                {% else %}Confirmed.{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div id="enter-code-modal" style="display: none;">
+        <div class="modal-bkg"></div>
+        <div class="modal">
+            <div class="modal-inner">
+                <form action="javascript:foursquare.confirm_number();">
+                    <div id="enter-code-input">
+                        <input type="text" id="phone-input" size="12">
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

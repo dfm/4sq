@@ -129,3 +129,33 @@ a {
     padding-top: 8px;
     color: #888;
 }
+
+.modal {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.modal-bkg {
+    content: "\0";
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #222;
+    opacity: 0.8;
+}
+
+.modal-inner {
+    width: 600px;
+    min-height: 300px;
+    margin: 10% auto;
+    background-color: #e3e3e1;
+}
+
+#enter-code-input {
+    width: 200px;
+}

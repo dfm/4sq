@@ -8,10 +8,13 @@ __all__ = ["app"]
 
 import re
 import json
+import random
+
 import flask
 from flask.ext.sqlalchemy import SQLAlchemy
 
 import foursquare
+from twilio.rest import TwilioRestClient
 
 app = flask.Flask(__name__)
 app.config.from_object("config.Config")
@@ -35,6 +38,12 @@ def get_current_user():
     return None
 
 
+def get_twilio_client():
+    client = TwilioRestClient(app.config.get("TWILIO_ID"),
+                              app.config.get("TWILIO_SECRET"))
+    return client
+
+
 @app.route("/4sq.js")
 def js():
     r = flask.make_response(flask.render_template("4sq.js"))
@@ -46,13 +55,7 @@ def js():
 def index():
     user = get_current_user()
     if user is not None:
-        api_connection.set_access_token(user.token)
-        try:
-            user = api_connection.users()["user"]
-        except foursquare.InvalidAuth:
-            user = None
-        else:
-            return flask.render_template("main.html", user=user)
+        return flask.render_template("main.html", user=user)
 
     return flask.render_template("index.html", user=user)
 
@@ -80,10 +83,43 @@ def parse_query(q):
     return True, {"venue": venue, "shout": shout, "private": private}
 
 
+def send_confirmation(number):
+    # Create a random code.
+    code = "".join([unicode(random.randint(0, 9)) for i in range(5)])
+
+    # Update the user.
+    user = get_current_user()
+    user.phone = number
+    user.code = code
+    user.confirmed = False
+    db.session.add(user)
+    db.session.commit()
+
+    # Send the confirmation SMS.
+    client = get_twilio_client()
+    client.sms.messages.create(to="+1" + number,
+                               from_=app.config.get("TWILIO_NUMBER"),
+                               body="Confirm your number for Foursquare SMS "
+                                    "by entering the code: {0}".format(code))
+
+
 @app.route("/api/check")
 def check_number():
-    print(flask.request.values)
-    return json.dumps({"number": "917-327-3473"})
+    # Get the provided number.
+    number = flask.request.args.get("number", None)
+    if number is None:
+        return json.dumps("Please provide a number."), 400
+
+    # Parse the number.
+    number = "".join(re.findall("[0-9]", number))
+    if len(number) != 10:
+        return json.dumps("Invalid number."), 400
+
+    send_confirmation(number)
+
+    return json.dumps({"number": "{0}-{1}-{2}".format(number[:3],
+                                                      number[3:6],
+                                                      number[6:])})
 
 
 @app.route("/api")
