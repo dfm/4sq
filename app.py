@@ -260,7 +260,11 @@ def get_sms():
     api_connection.checkins.add(p)
 
     # Send the response.
-    resp.sms("You're at {0}".format(v["name"]))
+    msg = "You're at {0}".format(v["name"])
+    address = v["location"].get("address", None)
+    if address is not None:
+        msg += ", " + address
+    resp.sms(msg)
     return unicode(resp)
 
 
