@@ -7,11 +7,17 @@ from __future__ import (division, print_function, absolute_import,
 __all__ = ["app"]
 
 import re
-import json
 import random
 
 import flask
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship, backref
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 import foursquare
 import twilio.twiml
@@ -25,10 +31,10 @@ app.debug = True
 db = SQLAlchemy(app)
 
 # Foursquare API interface.
-api_connection = foursquare.Foursquare(
-                        client_id=app.config["FOURSQUARE_ID"],
-                        client_secret=app.config["FOURSQUARE_SECRET"],
-                        redirect_uri=app.config["FOURSQUARE_URL"])
+args = dict(client_id=app.config["FOURSQUARE_ID"],
+            client_secret=app.config["FOURSQUARE_SECRET"],
+            redirect_uri=app.config["FOURSQUARE_URL"])
+api_connection = foursquare.Foursquare(**args)
 
 
 def get_current_user():
@@ -326,18 +332,39 @@ class User(db.Model):
     phone = db.Column(db.Text)
     confirmed = db.Column(db.Boolean)
     code = db.Column(db.Text)
-    homeCity = db.Column(db.Text)
+    home_city = db.Column(db.Text)
 
-    def __init__(self, foursquare_id, token, homeCity):
+    country_id = Column(Integer, ForeignKey('users.id'))
+    country = relationship("Country", backref=backref("users", order_by="id"))
+
+    def __init__(self, foursquare_id, token, home_city):
         self.foursquare_id = foursquare_id
         self.token = token
         self.phone = None
         self.confirmed = False
         self.code = None
-        self.homeCity = homeCity
+        self.home_city = home_city
 
     def __repr__(self):
         return "User({0.foursquare_id}, {0.token})".format(self)
+
+
+class Country(db.Model):
+
+    __tablename__ = "countries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text)
+    prefix = db.Column(db.Text)
+    phone = db.Column(db.Text)
+
+    def __init__(self, name, prefix, phone):
+        self.name = name
+        self.prefix = prefix
+        self.phone = phone
+
+    def __repr__(self):
+        return "Country({0.name})".format(self)
 
 
 if __name__ == "__main__":
